@@ -1,5 +1,9 @@
-function fileviewer ($file, [string[]]$filearray, [switch]$documents, [switch]$help) {# File Viewer.
-$script:file = $file; $script:filearray = $filearray; ""
+function fileviewer ($file, [string[]]$filearray, [switch]$documents, [string]$search, [switch]$help) {# File Viewer.
+$script:file = $file; $script:filearray = $filearray; $pattern = "(?i)" + [regex]::Escape($searchTerm); $searchHits = @(0..($content.Count - 1) | Where-Object {$content[$_] -match $pattern}); $currentSearchIndex = $searchHits | Where-Object {$_ -gt $pos} | Select-Object -First 1; $pos = $currentSearchIndex
+""
+
+# Accept search terms, if passed.
+if ($search) {$searchTerm = $search}
 
 if ($help) {function scripthelp ($section) {# (Internal) Generate the help sections from the comments section of the script.
 Write-Host -f yellow ("-" * 100); $pattern = "(?ims)^## ($section.*?)(##|\z)"; $match = [regex]::Match($scripthelp, $pattern); $lines = $match.Groups[1].Value.TrimEnd() -split "`r?`n", 2; Write-Host $lines[0] -f yellow; Write-Host -f yellow ("-" * 100)
@@ -18,8 +22,7 @@ while ($true); return}
 
 # File array selection menu
 function filemenu_virtual ($script:filearray) {$page = 0; $perpage = 30; $script:file = $null; $errormessage = $null
-while ($true) {#cls;
-$input = $null; $entryIndex = $null; $sel = $null
+while ($true) {cls; $input = $null; $entryIndex = $null; $sel = $null
 Write-Host -f cyan "Search Results (Page $($page + 1))`n"; $startIndex = $page * $perpage; $endIndex = [Math]::Min(($page + 1) * $perpage - 1, $script:filearray.Count - 1); $paged = $script:filearray[$startIndex..$endIndex]; $optionCount = 0
 for ($i = 0; $i -lt $paged.Count; $i++) {$optionCount++; $name = Split-Path -Leaf $paged[$i]; Write-Host -f white "$optionCount. $name" -n; $sizeKB = try {[math]::Round(((Get-Item $paged[$i]).Length + 500) / 1KB, 0)} catch {" "}; Write-Host -f white " [$sizeKB KB]"}
 if (($page + 1) * $perpage -lt $script:filearray.Count) {$optionCount++; Write-Host "$optionCount. NEXT..." -f Cyan}
@@ -36,8 +39,7 @@ if ($script:filearray -and -not $script:file) {filemenu_virtual $script:filearra
 function filemenu {param([string]$path, [string]$parentPath = $null)
 if (-not $path) {$path = (Get-Location)}
 $page = 0; $perpage = 30; $script:file = $null; $errormessage = $null
-while ($true) {#cls; 
-Write-Host -f cyan "Select a file to view from: " -n; Write-Host -f white "$path`n"
+while ($true) {cls; Write-Host -f cyan "Select a file to view from: " -n; Write-Host -f white "$path`n"
 if ($documents) {$pattern = '(?i)\.(1st|backup|bat|cmd|doc|htm?l|log|me|ps[dm]?1|te?mp)$'} else {$pattern = '.+'}
 $dirs = Get-ChildItem -LiteralPath $path -Directory -Force | Sort-Object Name; $script:files = Get-ChildItem -LiteralPath $path -File -Force | Where-Object {$_.Extension -match $pattern} | Sort-Object Name; $entries = @(@($dirs) + @($script:files))
 if ($entries.Count -eq 0) {Write-Host -f yellow ".."; Write-Host -f red "No viewable files found."; Write-Host -f white "`nPress Enter to return to previous menu." -n; [void] (Read-Host); return}
@@ -138,7 +140,7 @@ $pos = $currentSearchIndex}
 'C' {$searchTerm = $null; $searchHits.Count = 0; $searchHits = @(); $currentSearchIndex = $null}
 'D' {""; gc $script:file | more; return}
 'X' {edit $script:file; "" ; return}
-'M' {if ($script:filearray) {fileviewer -filearray $script:filearray; return} else {return filemenu (Get-Location)}}
+'M' {if ($script:filearray) {fileviewer -filearray $script:filearray; return} else {return fileviewer (Get-Location)}}
 'Q' {""; return}
 default {Write-Host -f red "`nInvalid input.`n"}}}}
 
@@ -147,10 +149,11 @@ default {Write-Host -f red "`nInvalid input.`n"}}}}
 ## fileviewer
 This file viewer will present files on screen for easy viewing.
 
-Usage: fileviewer <filename> <filearray> -documents -help
+Usage: fileviewer <filename> <filearray> <search> -documents -help
 
 	• If no file is provided, a file selection menu is presented.
 	• If a file array is provided, the file selection menu is presented, populated with those files.
+	• Search terms can be passed to the file viewer right from the command line, which is especially useful for the filearray option.
 	• Use the -documents switch to limit files within the selector to the following extensions: 1st, backup, bat, cmd, doc, htm, html, log, me, ps1, psd1, psm1, temp, temp.
 
 Once inside the viewer, the options include:
