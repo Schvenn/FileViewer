@@ -3,7 +3,7 @@ $script:file = $file; $script:filearray = $filearray; $pattern = "(?i)" + [regex
 ""
 
 # Accept search terms, if passed.
-if ($search) {$searchTerm = $search}
+if ($search) {$searchTerm = "$search"}
 
 if ($help) {function scripthelp ($section) {# (Internal) Generate the help sections from the comments section of the script.
 Write-Host -f yellow ("-" * 100); $pattern = "(?ims)^## ($section.*?)(##|\z)"; $match = [regex]::Match($scripthelp, $pattern); $lines = $match.Groups[1].Value.TrimEnd() -split "`r?`n", 2; Write-Host $lines[0] -f yellow; Write-Host -f yellow ("-" * 100)
@@ -80,16 +80,16 @@ $separators = @(0) + (0..($content.Count - 1) | Where-Object {$content[$_] -matc
 
 function Get-BreakPoint {param($start), $maxEnd = [Math]::Min($start + $pageSize - 1, $content.Count - 1); for ($i = $start + 29; $i -le $maxEnd; $i++) {if ($content[$i] -match '^[-=]{100}$') {return $i}}; return $maxEnd}
 
-function Show-Page {cls; $start = $pos; $end = Get-BreakPoint $start; $pageLines = $content[$start..$end]; $highlight = if ($searchTerm) {"(?i)" + [regex]::Escape($searchTerm)} else {$null}
-foreach ($line in $pageLines) {if ($line -match '^[-=]{100}$') {Write-Host -f Yellow $line}
+function Show-Page {cls; $start = $pos; $end = Get-BreakPoint $start; $pageLines = $content[$start..$end]; $highlight = if ($searchTerm) {"$pattern"} else {$null}
+foreach ($line in $pageLines) {if ($line -match '^[-=]{100}$') {Write-Host -f yellow $line}
 elseif ($highlight -and $line -match $highlight) {$parts = [regex]::Split($line, "($highlight)")
 foreach ($part in $parts) {if ($part -match "^$highlight$") {Write-Host -f black -b yellow $part -n}
 else {Write-Host -f white $part -n}}; ""}
 else {Write-Host -f white $line}}
+
 # Pad with blank lines if this page has fewer than $pageSize lines
 $linesShown = $end - $start + 1
-if ($linesShown -lt $pageSize) {for ($i = 1; $i -le ($pageSize - $linesShown); $i++) {Write-Host ""}}
-}
+if ($linesShown -lt $pageSize) {for ($i = 1; $i -le ($pageSize - $linesShown); $i++) {Write-Host ""}}}
 
 $errormessage = ""; $searchmessage = "Search Commands"
 # Main menu loop
@@ -127,7 +127,7 @@ if ($null -eq $currentSearchIndex -and $searchHits -ne @()) {$currentSearchIndex
 $pos = $currentSearchIndex}
 'S' {Write-Host -f green "Keyword to search forward from this point in the logs" -n; $searchTerm = Read-Host " "
 if (-not $searchTerm) {$errormessage = "No keyword entered."; $searchTerm = $null; $searchHits = @(); break}
-$pattern = "(?i)" + [regex]::Escape($searchTerm); $searchHits = @(0..($content.Count - 1) | Where-Object {$content[$_] -match $pattern})
+$pattern = "(?i)$searchTerm"; $searchHits = @(0..($content.Count - 1) | Where-Object {$content[$_] -match $pattern})
 if (-not $searchHits) {$errormessage = "Keyword not found in file."; $searchHits = @(); $currentSearchIndex = -1}
 $currentSearchIndex = $searchHits | Where-Object {$_ -gt $pos} | Select-Object -First 1
 if ($null -eq $currentSearchIndex) {Write-Host -f green "No match found after this point. Jump to first match? (Y/N)" -n; $wrap = Read-Host " "
