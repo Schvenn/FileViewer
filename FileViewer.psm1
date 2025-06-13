@@ -162,6 +162,7 @@ $pos = $currentSearchIndex}
 'Q' {""; return}
 default {Write-Host -f red "`nInvalid input.`n"}}}}
 
+Export-ModuleMember -Function fileviewer
 
 <#
 ## fileviewer
