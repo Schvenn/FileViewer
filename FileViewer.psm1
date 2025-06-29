@@ -121,14 +121,14 @@ if ($linesShown -lt $pageSize) {for ($i = 1; $i -le ($pageSize - $linesShown); $
 $errormessage = ""; $searchmessage = "Search Commands"
 # Main menu loop
 while ($true) {Show-Page; $pageNum = [math]::Floor($pos / $pageSize) + 1; $totalPages = [math]::Ceiling($content.Count / $pageSize)
-if ($searchHits.Count -gt 0) {$currentMatch = ($searchHits | Where-Object {$_ -eq $pos} | ForEach-Object {[array]::IndexOf($searchHits, $_) + 1})
-if ($currentMatch) {$searchmessage = "Match $currentMatch of $($searchHits.Count)"}}
+if ($searchHits.Count -gt 0) {$currentMatch = [array]::IndexOf($searchHits, $pos); if ($currentMatch -ge 0) {$searchmessage = "Match $($currentMatch + 1) of $($searchHits.Count)"}
+else {$searchmessage = "Search active ($($searchHits.Count) matches)"}}
 Write-Host ""; Write-Host -f yellow ("=" * 120)
 $left = "$script:fileName".PadRight(57); $middle = "$errormessage".PadRight(44); $right = "(Page $pageNum of $totalPages)"
 Write-Host -f white $left -n; Write-Host -f red $middle -n; Write-Host -f cyan $right
 $left = "Page Commands".PadRight(55); $middle = "| $searchmessage ".PadRight(34); $right = "| Exit Commands"
 Write-Host -f yellow ($left + $middle + $right)
-Write-Host -f yellow "[F]irst [N]ext [+/-]# Lines P[A]ge # [P]revious [L]ast | [<][S]earch[>] [#]Match [C]lear | [D]ump [X]Edit [M]enu [Q]uit " -n; $action = getaction
+Write-Host -f yellow "[F]irst [N]ext [+/-]# Lines P[A]ge # [P]revious [L]ast | [<][S]earch[>] [#]Match [C]lear | [D]ump [X]Edit [M]enu [Q]uit " -n
 $errormessage = ""; $searchmessage = "Search Commands"
 
 function getaction {[string]$buffer = ""
@@ -150,6 +150,8 @@ switch ($char) {',' {return '<'}
 {$_ -match '(?i)[B-Z]'} {return $char.ToString().ToUpper()}
 {$_ -match '[A#\+\-\d]'} {$buffer += $char}
 default {$buffer = ""}}}}}}
+
+$action = getaction
 
 switch ($action.ToString().ToUpper()) {'F' {$pos = 0}
 'N' {$next = Get-BreakPoint $pos; if ($next -lt $content.Count - 1) {$pos = $next + 1}
