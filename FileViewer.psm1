@@ -88,10 +88,10 @@ else {$errormessage = "Invalid selection."}}
 else {$errormessage = "Invalid input."}}}
 
 # Run selection menu if a directory path was passed to the script, rather than a file.
-if ((Test-Path $script:file -PathType Container -ErrorAction SilentlyContinue) -or (-not $script:file -and -not $script:filearray)) {filemenu $script:file}
+if ((Test-Path $script:file -PathType Container -ea SilentlyContinue) -or (-not $script:file -and -not $script:filearray)) {filemenu $script:file}
 
 # Error-checking
-if (-not (Test-Path $script:file -PathType Leaf -ErrorAction SilentlyContinue) -or (-not $script:file)) {Write-Host -f red "`nNo file provided.`n"; return}
+if (-not (Test-Path $script:file -PathType Leaf -ea SilentlyContinue) -or (-not $script:file)) {Write-Host -f red "`nNo file provided.`n"; return}
 if (-not (Test-Path $script:file)) {Write-Host -f red "`nFile not found.`n"; return}
 
 # Read GZip files.
@@ -126,33 +126,40 @@ if ($currentMatch) {$searchmessage = "Match $currentMatch of $($searchHits.Count
 Write-Host ""; Write-Host -f yellow ("=" * 120)
 $left = "$script:fileName".PadRight(57); $middle = "$errormessage".PadRight(44); $right = "(Page $pageNum of $totalPages)"
 Write-Host -f white $left -n; Write-Host -f red $middle -n; Write-Host -f cyan $right
-$left = "Page Commands".PadRight(55); $middle = "| $searchmessage ".PadRight(35); $right = "| Exit Commands"
+$left = "Page Commands".PadRight(55); $middle = "| $searchmessage ".PadRight(34); $right = "| Exit Commands"
 Write-Host -f yellow ($left + $middle + $right)
-Write-Host -f yellow "[F]irst [N]ext [+/-]# Lines p[A]ge # [P]revious [L]ast | [<][S]earch[>] [#]Number [C]lear | [D]ump [X]Edit [M]enu [Q]uit" -n; $action = Read-Host " "
+Write-Host -f yellow "[F]irst [N]ext [+/-]# Lines P[A]ge # [P]revious [L]ast | [<][S]earch[>] [#]Match [C]lear | [D]ump [X]Edit [M]enu [Q]uit " -n; $action = getaction
 $errormessage = ""; $searchmessage = "Search Commands"
 
-if ($action -match '^[+-]?\d+$') {$offset = [int]$action; $newPos = $pos + $offset; $pos = [Math]::Max(0, [Math]::Min($newPos, $content.Count - $pageSize))}
+function getaction {[string]$buffer = ""
+while ($true) {$key = [System.Console]::ReadKey($true)
+switch ($key.Key) {'LeftArrow' {return 'P'}
+'UpArrow' {return 'P'}
+'Backspace' {return 'P'}
+'PageUp' {return 'P'}
+'RightArrow' {return 'N'}
+'DownArrow' {return 'N'}
+'PageDown' {return 'N'}
+'Enter' {if ($buffer) {return $buffer}
+else {return 'N'}}
+'Home' {return 'F'}
+'End' {return 'L'}
+default {$char = $key.KeyChar
+switch ($char) {',' {return '<'}
+'.' {return '>'}
+{$_ -match '(?i)[B-Z]'} {return $char.ToString().ToUpper()}
+{$_ -match '[A#\+\-\d]'} {$buffer += $char}
+default {$buffer = ""}}}}}}
 
-if ($action -match '^#([+-]?\d+)$') {$jump = [int]$matches[1]
-if (-not $searchHits -or $searchHits.Count -eq 0) {$errormessage = "No search in progress."}
-else {if ($jump -ge 1 -or $jump -le -1) {$targetIndex = if ($jump -lt 0) {[Math]::Max(0, $currentSearchIndex + $jump)} 
-else {$jump - 1}
-if ($targetIndex -ge 0 -and $targetIndex -lt $searchHits.Count) {$pos = $searchHits[$targetIndex]; $errormessage = "Jumped to match #$($targetIndex + 1)."} 
-else {$errormessage = "Match #$jump is out of range."}} 
-else {$pos = $searchHits[0]; $errormessage = "Jumped to first match."}}}
-
-if ($action -match '^A(\d+)$') {$requestedPage = [int]$matches[1]
-if ($requestedPage -lt 1 -or $requestedPage -gt $totalPages) {$errormessage = "Page #$requestedPage is out of range."}
-else {$pos = ($requestedPage - 1) * $pageSize}}
-
-switch ($action.ToUpper()) {'F' {$pos = 0}
-'N' {$next = Get-BreakPoint $pos; if ($next -lt $content.Count - 1) {$pos = $next + 1} else {$pos = [Math]::Min($pos + $pageSize, $content.Count - 1)}}
+switch ($action.ToString().ToUpper()) {'F' {$pos = 0}
+'N' {$next = Get-BreakPoint $pos; if ($next -lt $content.Count - 1) {$pos = $next + 1}
+else {$pos = [Math]::Min($pos + $pageSize, $content.Count - 1)}}
 'P' {$pos = [Math]::Max(0, $pos - $pageSize)}
 'L' {$lastPageStart = [Math]::Max(0, [int][Math]::Floor(($content.Count - 1) / $pageSize) * $pageSize); $pos = $lastPageStart}
 '<' {$currentSearchIndex = ($searchHits | Where-Object {$_ -lt $pos} | Select-Object -Last 1)
 if ($null -eq $currentSearchIndex -and $searchHits -ne @()) {$currentSearchIndex = $searchHits[-1]; $errormessage = "Wrapped to last match."}
 $pos = $currentSearchIndex}
-'S' {Write-Host -f green "Keyword to search forward from this point in the logs" -n; $searchTerm = Read-Host " "
+'S' {Write-Host -f green "`n`nKeyword to search forward from this point in the logs" -n; $searchTerm = Read-Host " "
 if (-not $searchTerm) {$errormessage = "No keyword entered."; $searchTerm = $null; $searchHits = @(); break}
 $pattern = "(?i)$searchTerm"; $searchHits = @(0..($content.Count - 1) | Where-Object {$content[$_] -match $pattern})
 if (-not $searchHits) {$errormessage = "Keyword not found in file."; $searchHits = @(); $currentSearchIndex = -1}
@@ -168,8 +175,26 @@ $pos = $currentSearchIndex}
 'D' {""; gc $script:file | more; return}
 'X' {edit $script:file; "" ; return}
 'M' {if ($script:filearray) {fileviewer -filearray $script:filearray; return} else {return fileviewer (Get-Location)}}
-'Q' {""; return}
-default {Write-Host -f red "`nInvalid input.`n"}}}}
+'Q' {"`n"; return}
+
+default {if ($action -match '^[\+\-](\d+)$') {$offset = [int]$action; $newPos = $pos + $offset; $pos = [Math]::Max(0, [Math]::Min($newPos, $content.Count - $pageSize))}
+
+elseif ($action -match '^(\d+)$') {$jump = [int]$matches[1]
+if (-not $searchHits -or $searchHits.Count -eq 0) {$errormessage = "No search in progress."}
+else {if ($jump -ge 1 -or $jump -le -1) {$targetIndex = if ($jump -lt 0) {[Math]::Max(0, $currentSearchIndex + $jump)} 
+else {$jump - 1}
+if ($targetIndex -ge 0 -and $targetIndex -lt $searchHits.Count) {$pos = $searchHits[$targetIndex]; $errormessage = "Jumped to match #$($targetIndex + 1)."} 
+else {$errormessage = "Match #$jump is out of range."}} 
+else {$pos = $searchHits[0]; $errormessage = "Jumped to first match."}}}
+
+elseif ($action -match '^A(\d+)$') {$requestedPage = [int]$matches[1]
+if ($requestedPage -lt 1 -or $requestedPage -gt $totalPages) {$errormessage = "Page #$requestedPage is out of range."}
+else {$pos = ($requestedPage - 1) * $pageSize}}
+
+else {Write-Host -f red "`nInvalid input.`n"}}}
+
+
+}}
 
 Export-ModuleMember -Function fileviewer
 
@@ -179,10 +204,10 @@ This file viewer will present files on screen for easy viewing.
 
 Usage: fileviewer <filename> <filearray> <search> -documents -help
 
-	• If no file is provided, a file selection menu is presented.
-	• If a file array is provided, the file selection menu is presented, populated with those files.
-	• Search terms can be passed to the file viewer right from the command line, which is especially useful for the filearray option.
-	• Use the -documents switch to limit files within the selector to the following extensions: 1st, backup, bat, cmd, doc, htm, html, log, me, ps1, psd1, psm1, temp, temp.
+• If no file is provided, a file selection menu is presented.
+• If a file array is provided, the file selection menu is presented, populated with those files.
+• Search terms can be passed to the file viewer right from the command line, which is especially useful for the filearray option.
+• Use the -documents switch to limit files within the selector to the following extensions: 1st, backup, bat, cmd, doc, htm, html, log, me, ps1, psd1, psm1, temp, temp.
 
 Once inside the viewer, the options include:
 
