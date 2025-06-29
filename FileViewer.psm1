@@ -6,9 +6,13 @@ $script:file = $file; $script:filearray = $filearray; $pattern = "(?i)$search"; 
 if ($search) {$searchTerm = "$search"}
 
 if ($help) {# Inline help.
-function wordwrap ($field, [int]$maximumlinelength = 65) {# Modify fields sent to it with proper word wrapping.
-if ($null -eq $field -or $field.Length -eq 0) {return $null}
+# Modify fields sent to it with proper word wrapping.
+function wordwrap ($field, $maximumlinelength) {if ($null -eq $field -or $field.Length -eq 0) {return $null}
 $breakchars = ',.;?!\/ '; $wrapped = @()
+
+if (-not $maximumlinelength) {[int]$maximumlinelength = (100, $Host.UI.RawUI.WindowSize.Width | Measure-Object -Maximum).Maximum}
+if ($maximumlinelength) {if ($maximumlinelength -lt 60) {[int]$maximumlinelength = 60}
+if ($maximumlinelength -gt $Host.UI.RawUI.BufferSize.Width) {[int]$maximumlinelength = $Host.UI.RawUI.BufferSize.Width}}
 
 foreach ($line in $field -split "`n") {if ($line.Trim().Length -eq 0) {$wrapped += ''; continue}
 $remaining = $line.Trim()
@@ -58,7 +62,7 @@ function filemenu {param([string]$path, [string]$parentPath = $null)
 if (-not $path) {$path = (Get-Location)}
 $page = 0; $perpage = 30; $script:file = $null; $errormessage = $null
 while ($true) {cls; Write-Host -f cyan "Select a file to view from: " -n; Write-Host -f white "$path`n"
-if ($documents) {$filepattern = '(?i)\.(1st|backup|bat|cmd|doc|htm?l|log|me|ps[dm]?1|te?mp)$'} else {$filepattern = '.+'}
+if ($documents) {$filepattern = '(?i)\.(1st|backup|bat|cmd|doc|gz(ip)?|htm?l|log|me|ps[dm]?1|te?mp)$'} else {$filepattern = '.+'}
 $dirs = Get-ChildItem -LiteralPath $path -Directory -Force | Sort-Object Name; $script:files = Get-ChildItem -LiteralPath $path -File -Force | Where-Object {$_.Extension -match $filepattern} | Sort-Object Name; $entries = @(@($dirs) + @($script:files))
 if ($entries.Count -eq 0) {Write-Host -f yellow ".."; Write-Host -f red "No viewable files found."; Write-Host -f white "`nPress Enter to return to previous menu." -n; [void] (Read-Host); return}
 $startIndex = $page * $perpage; $endIndex = [Math]::Min(($page + 1) * $perpage - 1, $entries.Count - 1); $paged = $entries[$startIndex..$endIndex]; $optionCount = 0
@@ -90,8 +94,13 @@ if ((Test-Path $script:file -PathType Container -ErrorAction SilentlyContinue) -
 if (-not (Test-Path $script:file -PathType Leaf -ErrorAction SilentlyContinue) -or (-not $script:file)) {Write-Host -f red "`nNo file provided.`n"; return}
 if (-not (Test-Path $script:file)) {Write-Host -f red "`nFile not found.`n"; return}
 
-# Read log content once
-$content = Get-Content $script:file
+# Read GZip files.
+if ($script:file -like "*.gz") {try {$stream = [System.IO.File]::OpenRead($script:file); $gzip = New-Object System.IO.Compression.GzipStream($stream, [System.IO.Compression.CompressionMode]::Decompress); $reader = New-Object System.IO.StreamReader($gzip); $rawText = $reader.ReadToEnd(); $reader.Close(); $gzip.Close(); $stream.Close(); $content = $rawText -split "`r?`n"}
+catch {Write-Host -f red "`nFailed to read compressed file: $script:file`n"; return}}
+
+# Read plaintext files.
+else {$content = Get-Content $script:file}
+
 if (-not $content) {Write-Host -f red "`nFile is empty.`n"; return}
 
 $separators = @(0) + (0..($content.Count - 1) | Where-Object {$content[$_] -match '^[=]{100}$'}); $pageSize = 35; $pos = 0; $script:fileName = [System.IO.Path]::GetFileName($script:file); $searchHits = @(); $currentSearchIndex = -1
