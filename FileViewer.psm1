@@ -119,8 +119,8 @@ else {Write-Host -f white $line}}
 $linesShown = $end - $start + 1
 if ($linesShown -lt $pageSize) {for ($i = 1; $i -le ($pageSize - $linesShown); $i++) {Write-Host ""}}}
 
-$errormessage = ""; $searchmessage = "Search Commands"
 # Main menu loop
+$statusmessage = ""; $errormessage = ""; $searchmessage = "Search Commands"
 while ($true) {Show-Page; $pageNum = [math]::Floor($pos / $pageSize) + 1; $totalPages = [math]::Ceiling($content.Count / $pageSize)
 if ($searchHits.Count -gt 0) {$currentMatch = [array]::IndexOf($searchHits, $pos); if ($currentMatch -ge 0) {$searchmessage = "Match $($currentMatch + 1) of $($searchHits.Count)"}
 else {$searchmessage = "Search active ($($searchHits.Count) matches)"}}
@@ -160,10 +160,11 @@ switch ($action.ToString().ToUpper()) {'F' {$pos = 0}
 else {$pos = [Math]::Min($pos + $pageSize, $content.Count - 1)}}
 'P' {$pos = [Math]::Max(0, $pos - $pageSize)}
 'L' {$lastPageStart = [Math]::Max(0, [int][Math]::Floor(($content.Count - 1) / $pageSize) * $pageSize); $pos = $lastPageStart}
+
 '<' {$currentSearchIndex = ($searchHits | Where-Object {$_ -lt $pos} | Select-Object -Last 1)
 if ($null -eq $currentSearchIndex -and $searchHits -ne @()) {$currentSearchIndex = $searchHits[-1]; $statusmessage = "Wrapped to last match."; $errormessage = $null}
-$pos = $currentSearchIndex}
-
+$pos = $currentSearchIndex
+if (-not $searchHits -or $searchHits.Count -eq 0) {$errormessage = "No search in progress."; $statusmessage = $null}}
 'S' {Write-Host -f green "`n`nKeyword to search forward from this point in the logs" -n; $searchTerm = Read-Host " "
 if (-not $searchTerm) {$errormessage = "No keyword entered."; $statusmessage = $null; $searchTerm = $null; $searchHits = @(); continue}
 $pattern = "(?i)$searchTerm"; $searchHits = @(0..($content.Count - 1) | Where-Object { $content[$_] -match $pattern })
@@ -173,11 +174,12 @@ if ($null -eq $currentSearchIndex) {Write-Host -f green "No match found after th
 if ($wrap -match '^[Yy]$') {$currentSearchIndex = $searchHits[0]; $statusmessage = "Wrapped to first match."; $errormessage = $null}
 else {$errormessage = "Keyword not found further forward."; $statusmessage = $null; $searchHits = @()}}
 $pos = $currentSearchIndex}}
-
 '>' {$currentSearchIndex = ($searchHits | Where-Object {$_ -gt $pos} | Select-Object -First 1)
 if ($null -eq $currentSearchIndex -and $searchHits -ne @()) {$currentSearchIndex = $searchHits[0]; $statusmessage = "Wrapped to first match."; $errormessage = $null}
-$pos = $currentSearchIndex}
+$pos = $currentSearchIndex
+if (-not $searchHits -or $searchHits.Count -eq 0) {$errormessage = "No search in progress."; $statusmessage = $null}}
 'C' {$searchTerm = $null; $searchHits.Count = 0; $searchHits = @(); $currentSearchIndex = $null}
+
 'D' {""; gc $script:file | more; return}
 'X' {edit $script:file; "" ; return}
 'M' {if ($script:filearray) {fileviewer -filearray $script:filearray; return} else {return fileviewer (Get-Location)}}
@@ -186,7 +188,7 @@ $pos = $currentSearchIndex}
 default {if ($action -match '^[\+\-](\d+)$') {$offset = [int]$action; $newPos = $pos + $offset; $pos = [Math]::Max(0, [Math]::Min($newPos, $content.Count - $pageSize))}
 
 elseif ($action -match '^(\d+)$') {$jump = [int]$matches[1]
-if (-not $searchHits -or $searchHits.Count -eq 0) {$errormessage = "No search in progress."; $statusmessage = $null}
+if (-not $searchHits -or $searchHits.Count -eq 0) {$errormessage = "No search in progress."; $statusmessage = $null; continue}
 $targetIndex = $jump - 1
 if ($targetIndex -ge 0 -and $targetIndex -lt $searchHits.Count) {$pos = $searchHits[$targetIndex]
 if ($targetIndex -eq 0) {$statusmessage = "Jumped to first match."}
@@ -197,7 +199,9 @@ elseif ($action -match '^A(\d+)$') {$requestedPage = [int]$matches[1]
 if ($requestedPage -lt 1 -or $requestedPage -gt $totalPages) {$errormessage = "Page #$requestedPage is out of range."; $statusmessage = $null}
 else {$pos = ($requestedPage - 1) * $pageSize}}
 
-else {$errormessage = "Invalid input."; $statusmessage = $null}}}}}
+else {$errormessage = "Invalid input."; $statusmessage = $null}}
+}
+}}
 
 Export-ModuleMember -Function fileviewer
 
