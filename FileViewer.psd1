@@ -14,8 +14,8 @@ AliasesToExport = @()
 FileList = @('FileViewer.psm1', 'license.txt')
 PrivateData = @{
 PSData = @{
-Tags = @('file','viewer','search','paging','gzip','log','cybersecurity','forensics','PowerShell')
+Tags = @('file','gzip','integration','log','paging','search','viewer')
 LicenseUri = 'https://github.com/Schvenn/FileViewer/blob/main/license.txt'
 ProjectUri = 'https://github.com/Schvenn/FileViewer'
-ReleaseNotes = 'Initial gallery release. Supports interactive file viewing with search and gzip handling.'
+ReleaseNotes = 'Initial PowerShell gallery release. Interactive file viewer with file browser, search support, gzip handling and accepts input from external tools.'
 }}}
