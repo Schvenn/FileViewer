@@ -1,6 +1,6 @@
 @{
 RootModule = 'FileViewer.psm1'
-ModuleVersion = '1.1'
+ModuleVersion = '1.2'
 GUID = 'e1a59c2d-6dbe-4f32-bd7b-36eaa0f5b7d2'
 Author = 'Schvenn'
 CompanyName = 'Plath Consulting Incorporated'
