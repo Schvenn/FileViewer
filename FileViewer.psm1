@@ -216,7 +216,7 @@ Export-ModuleMember -Function fileviewer
 ## FileViewer
 This file viewer will present files on screen for easy viewing.
 
-Usage: fileviewer <filename> <filearray> <search> -documents -help
+	Usage: fileviewer <filename> <filearray> <search> -documents -help
 
 • If no file is provided, a file selection menu is presented.
 • If a file array is provided, the file selection menu is presented, populated with those files.
@@ -229,27 +229,27 @@ Navigation:
 
 Navigation:
 
-[F]irst page / [HOME]
-[N]ext page / [PgDn] / [Right]
-[+/-]# to move forward or back a specific # of lines / [Down] / [Up]
-p[A]ge # to jump to a specific page
-[P]revious page / [PgUp] / [Left]
-[L]ast page / [END]
+	[F]irst page / [HOME]
+	[N]ext page / [PgDn] / [Right]
+	[+/-]# to move forward or back a specific # of lines / [Down] / [Up]
+	p[A]ge # to jump to a specific page
+	[P]revious page / [PgUp] / [Left]
+	[L]ast page / [END]
 
 Search:
 
-[S]earch for a term
-[<] Previous match
-[>] Next match
-[#]Number to find a specific match number
-[C]lear search term
+	[S]earch for a term
+	[<] Previous match
+	[>] Next match
+	[#]Number to find a specific match number
+	[C]lear search term
 
 Exit Commands:
 
-[D]ump to screen with | MORE and Exit
-[X]Edit using Notepad++, if available. Otherwise, use Notepad.
-[M]enu to open the file selection menu
-[Q]uit
+	[D]ump to screen with | MORE and Exit
+	[X]Edit using Notepad++, if available. Otherwise, use Notepad.
+	[M]enu to open the file selection menu
+	[Q]uit
 ## License
 MIT License
 
