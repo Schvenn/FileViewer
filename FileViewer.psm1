@@ -225,7 +225,7 @@ This file viewer will present files on screen for easy viewing.
 
 Once inside the viewer, the options include:
 
-Navigation:
+## Navigation
 
 Navigation:
 
