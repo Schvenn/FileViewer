@@ -223,9 +223,8 @@ This file viewer will present files on screen for easy viewing.
 • Search terms can be passed to the file viewer right from the command line, which is especially useful for the filearray option.
 • Use the -documents switch to limit files within the selector to the following extensions: 1st, backup, bat, cmd, doc, gz, htm, html, log, me, ps1, psd1, psm1, temp, temp.
 
-Once inside the viewer, the options include:
-
 ## Navigation
+Once inside the viewer, the options include:
 
 Navigation:
 
