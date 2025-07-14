@@ -1,5 +1,4 @@
-@{
-RootModule = 'FileViewer.psm1'
+@{RootModule = 'FileViewer.psm1'
 ModuleVersion = '1.2'
 GUID = 'e1a59c2d-6dbe-4f32-bd7b-36eaa0f5b7d2'
 Author = 'Schvenn'
@@ -11,11 +10,9 @@ FunctionsToExport = @('fileviewer')
 CmdletsToExport = @()
 VariablesToExport = @()
 AliasesToExport = @()
-FileList = @('FileViewer.psm1', 'license.txt')
+FileList = @('FileViewer.psm1')
 PrivateData = @{
-PSData = @{
-Tags = @('file','gzip','integration','log','paging','search','viewer')
-LicenseUri = 'https://github.com/Schvenn/FileViewer/blob/main/license.txt'
+PSData = @{Tags = @('file','gzip','integration','log','paging','search','viewer')
+LicenseUri = 'https://github.com/Schvenn/FileViewer/blob/main/LICENSE'
 ProjectUri = 'https://github.com/Schvenn/FileViewer'
-ReleaseNotes = 'Initial PowerShell gallery release. Interactive file viewer with file browser, search support, gzip handling and accepts input from external tools.'
-}}}
+ReleaseNotes = 'Initial PowerShell gallery release. Interactive file viewer with file browser, search support, gzip handling and accepts input from external tools.'}}}
