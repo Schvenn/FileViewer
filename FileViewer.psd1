@@ -11,8 +11,8 @@ CmdletsToExport = @()
 VariablesToExport = @()
 AliasesToExport = @()
 FileList = @('FileViewer.psm1')
-PrivateData = @{
-PSData = @{Tags = @('file','gzip','integration','log','paging','search','viewer')
+
+PrivateData = @{PSData = @{Tags = @('file','gzip','integration','log','paging','search','viewer')
 LicenseUri = 'https://github.com/Schvenn/FileViewer/blob/main/LICENSE'
 ProjectUri = 'https://github.com/Schvenn/FileViewer'
 ReleaseNotes = 'Initial PowerShell gallery release. Interactive file viewer with file browser, search support, gzip handling and accepts input from external tools.'}}}
